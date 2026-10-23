@@ -21,12 +21,16 @@ const RISK_CLASS = ["badge-safe", "badge-warn", "badge-danger"];
 
 // 各检测项权重（满分 100）
 const WEIGHTS = {
-  timezone: 20,
-  language: 20,
-  ip: 25,
-  dns: 15,
-  webrtc: 10,
-  proxy: 10,
+  timezone: 15,
+  language: 15,
+  ip: 20,
+  dns: 12,
+  webrtc: 8,
+  proxy: 8,
+  locale: 8,
+  fonts: 7,
+  format: 8,
+  device: 7,
 };
 
 // ---------- DOM ----------
@@ -50,6 +54,10 @@ const results = {
   dns: null,
   webrtc: null,
   proxy: null,
+  locale: null,
+  fonts: null,
+  format: null,
+  device: null,
 };
 
 // ---------- 工具函数 ----------
@@ -350,6 +358,212 @@ function checkProxy() {
   setDetail("proxy", detail);
 }
 
+// ---------- 7. 区域与日历格式检测 ----------
+function checkLocale() {
+  const resolved = Intl.DateTimeFormat().resolvedOptions();
+  const locale = resolved.locale || "未知";
+  const calendar = resolved.calendar || "未知";
+  const numberingSystem = resolved.numberingSystem || "未知";
+  const hourCycle = resolved.hourCycle || "未知";
+
+  // 提取 region
+  const parts = locale.split(/[-_]/);
+  const region = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : "";
+
+  let risk = RISK.SAFE;
+  const flags = [];
+
+  if (region === "CN") {
+    risk = RISK.DANGER;
+    flags.push("区域代码为 CN");
+  } else if (["HK", "MO", "TW"].includes(region)) {
+    risk = Math.max(risk, RISK.WARN);
+    flags.push("区域代码为港澳台");
+  }
+
+  if (calendar === "chinese") {
+    risk = Math.max(risk, RISK.DANGER);
+    flags.push("使用农历");
+  }
+
+  if (numberingSystem === "hanidec") {
+    risk = Math.max(risk, RISK.WARN);
+    flags.push("使用中文数字");
+  }
+
+  if (hourCycle === "h23" || hourCycle === "h24") {
+    // 24 小时制在国内常见，但国外也常用，不算强信号
+  }
+
+  let detail = `区域：<code>${locale}</code><br/>日历：<code>${calendar}</code><br/>数字系统：<code>${numberingSystem}</code><br/>小时制：<code>${hourCycle}</code>`;
+  if (flags.length) {
+    detail += "<br/>⚠️ " + flags.join("、");
+  } else {
+    detail += "<br/>✅ 区域格式无大中华区特征";
+  }
+
+  results.locale = { risk, weight: WEIGHTS.locale };
+  setBadge("check-locale", risk);
+  setDetail("locale", detail);
+}
+
+// ---------- 8. 中文字体检测 ----------
+function checkFonts() {
+  const cnFonts = [
+    "SimSun", "宋体", "NSimSun", "新宋体",
+    "Microsoft YaHei", "微软雅黑", "微软雅黑体",
+    "SimHei", "黑体",
+    "KaiTi", "楷体",
+    "FangSong", "仿宋",
+    "STSong", "华文宋体",
+    "STHeiti", "华文黑体",
+    "STKaiti", "华文楷体",
+    "STFangsong", "华文仿宋",
+    "PingFang SC", "苹方",
+    "Hiragino Sans GB",
+    "Noto Sans CJK SC", "Noto Serif CJK SC",
+    "Source Han Sans SC", "Source Han Serif SC",
+    "WenQuanYi Micro Hei", "文泉驿微米黑",
+  ];
+
+  // 用 canvas 测量字体宽度来判断字体是否存在
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const baseFont = "monospace";
+  const testString = "mmmmmmmmmmlli";
+  const fontSize = "72px";
+
+  ctx.font = `${fontSize} ${baseFont}`;
+  const baseWidth = ctx.measureText(testString).width;
+
+  const detected = [];
+  for (const font of cnFonts) {
+    ctx.font = `${fontSize} "${font}", ${baseFont}`;
+    const w = ctx.measureText(testString).width;
+    if (w !== baseWidth) {
+      detected.push(font);
+    }
+  }
+
+  let risk = RISK.SAFE;
+  let detail = `共检测 ${cnFonts.length} 种常见中文字体`;
+
+  if (detected.length >= 8) {
+    risk = RISK.DANGER;
+    detail += `<br/>⚠️ 检测到 ${detected.length} 种中文字体，系统很可能安装了中文语言包`;
+  } else if (detected.length >= 3) {
+    risk = RISK.WARN;
+    detail += `<br/>❗ 检测到 ${detected.length} 种中文字体`;
+  } else if (detected.length > 0) {
+    detail += `<br/>✅ 仅检测到少量中文字体（${detected.length} 种）`;
+  } else {
+    detail += "<br/>✅ 未检测到常见中文字体";
+  }
+
+  if (detected.length > 0) {
+    detail += "<br/>已安装：<code>" + detected.slice(0, 12).join("</code>, <code>") + (detected.length > 12 ? "…" : "") + "</code>";
+  }
+
+  results.fonts = { risk, weight: WEIGHTS.fonts };
+  setBadge("check-fonts", risk);
+  setDetail("fonts", detail);
+}
+
+// ---------- 9. 日期与货币格式检测 ----------
+function checkFormat() {
+  const now = new Date(2024, 0, 15, 14, 30, 0); // 2024-01-15 14:30
+
+  const dateStr = new Intl.DateTimeFormat(undefined, {
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(now);
+
+  const timeStr = new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit", minute: "2-digit",
+  }).format(now);
+
+  let currencyStr = "未知";
+  let currencyCode = "未知";
+  try {
+    currencyStr = new Intl.NumberFormat(undefined, {
+      style: "currency", currency: "CNY",
+    }).format(1234.56);
+    currencyCode = new Intl.NumberFormat().resolvedOptions().currency || "未知";
+  } catch (e) {}
+
+  const weekDay = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(now);
+
+  let risk = RISK.SAFE;
+  const flags = [];
+
+  // 中国日期格式特征：年在前，用 / 或 年
+  if (/^2024[\/年.\-]01[\/月.\-]15/.test(dateStr) || /2024[\/年]/.test(dateStr)) {
+    risk = Math.max(risk, RISK.WARN);
+    flags.push("日期格式为年-月-日");
+  }
+
+  // 货币符号
+  if (currencyStr.includes("¥") || currencyStr.includes("￥") || currencyStr.includes("CN¥")) {
+    risk = Math.max(risk, RISK.WARN);
+    flags.push("货币符号为人民币 ¥");
+  }
+  if (currencyCode === "CNY") {
+    risk = Math.max(risk, RISK.WARN);
+    flags.push("默认货币为 CNY");
+  }
+
+  // 每周第一天（中国是周一）
+  let firstDay = "未知";
+  try {
+    const fd = Intl.Locale(undefined).weekInfo?.firstDay;
+    if (fd !== undefined) firstDay = fd === 1 ? "周一" : fd === 7 ? "周日" : String(fd);
+    if (fd === 1) {
+      risk = Math.max(risk, RISK.WARN);
+      flags.push("每周第一天为周一");
+    }
+  } catch (e) {}
+
+  let detail = `日期格式：<code>${dateStr}</code><br/>时间格式：<code>${timeStr}</code><br/>货币显示：<code>${currencyStr}</code><br/>默认货币：<code>${currencyCode}</code><br/>每周首日：<code>${firstDay}</code>`;
+  if (flags.length) {
+    detail += "<br/>⚠️ " + flags.join("、");
+  } else {
+    detail += "<br/>✅ 日期/货币格式无明显中国特征";
+  }
+
+  results.format = { risk, weight: WEIGHTS.format };
+  setBadge("check-format", risk);
+  setDetail("format", detail);
+}
+
+// ---------- 10. 设备与平台指纹 ----------
+function checkDevice() {
+  const platform = navigator.platform || "未知";
+  const userAgent = navigator.userAgent || "未知";
+  const deviceMemory = navigator.deviceMemory || "未知";
+  const hardwareConcurrency = navigator.hardwareConcurrency || "未知";
+  const screenRes = `${screen.width}×${screen.height}`;
+  const colorDepth = screen.colorDepth || "未知";
+  const touchSupport = "ontouchstart" in window ? "支持" : "不支持";
+  const langList = (navigator.languages || []).join(", ") || navigator.language;
+
+  // 判断 UA 中是否有中文相关标识
+  const uaLower = userAgent.toLowerCase();
+  const hasCnUA = /zh-cn|zh-cn|sogou|qqbrowser|360|maxthon|theworld|greenbrowser|ucbrowser|micromessenger|wechat|weibo|baidubrowser|liebao|lbbrowser|quark|huawei|honor|xiaomi|oppo|vivo|meizu|lenovo/.test(uaLower);
+
+  let risk = RISK.SAFE;
+  const flags = [];
+
+  if (hasCnUA) {
+    risk = Math.max(risk, RISK.WARN);
+    flags.push("UA 含国产浏览器/设备特征");
+  }
+
+  const detail = `平台：<code>${platform}</code><br/>屏幕分辨率：<code>${screenRes}</code>（${colorDepth} 位色）<br/>设备内存：<code>${deviceMemory} GB</code><br/>CPU 核心：<code>${hardwareConcurrency}</code><br/>触摸：<code>${touchSupport}</code><br/>UA 片段：<code>${userAgent.slice(0, 80)}…</code>${flags.length ? "<br/>⚠️ " + flags.join("、") : ""}`;
+
+  results.device = { risk, weight: WEIGHTS.device };
+  setBadge("check-device", risk);
+  setDetail("device", detail);
+}
+
 // ---------- 风险评分汇总 ----------
 function calcScore() {
   let total = 0;
@@ -395,6 +609,10 @@ async function runAllChecks() {
   // 同步检测
   checkTimezone();
   checkLanguage();
+  checkLocale();
+  checkFonts();
+  checkFormat();
+  checkDevice();
 
   // 异步检测（需要网络）
   await checkIP();

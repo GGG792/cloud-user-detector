@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cloud 用户识别检测</title>
-  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <header class="topbar">
@@ -24,7 +24,7 @@
       </div>
       <div class="score-info">
         <h2 id="scoreTitle">点击下方按钮开始检测</h2>
-        <p id="scoreDesc">本工具会检测：系统时区、系统/浏览器语言、IP 归属地、DNS 解析器、WebRTC 真实 IP 泄露、代理/中转站特征。</p>
+        <p id="scoreDesc">本工具会检测：时区、语言、IP 归属地、DNS、WebRTC 泄露、代理特征、区域日历、中文字体、日期货币格式、设备指纹。</p>
         <button id="btnStart" class="btn btn-primary btn-large">🚀 开始检测</button>
       </div>
     </section>
@@ -90,6 +90,46 @@
         </div>
         <div class="check-detail" id="detail-proxy">—</div>
       </div>
+
+      <!-- 区域与日历格式 -->
+      <div class="check-item" id="check-locale">
+        <div class="check-head">
+          <span class="check-icon">📅</span>
+          <span class="check-name">区域 / 日历格式</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-locale">—</div>
+      </div>
+
+      <!-- 中文字体 -->
+      <div class="check-item" id="check-fonts">
+        <div class="check-head">
+          <span class="check-icon">🔤</span>
+          <span class="check-name">中文字体检测</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-fonts">—</div>
+      </div>
+
+      <!-- 日期与货币格式 -->
+      <div class="check-item" id="check-format">
+        <div class="check-head">
+          <span class="check-icon">💴</span>
+          <span class="check-name">日期 / 货币格式</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-format">—</div>
+      </div>
+
+      <!-- 设备与平台指纹 -->
+      <div class="check-item" id="check-device">
+        <div class="check-head">
+          <span class="check-icon">💻</span>
+          <span class="check-name">设备 / 平台指纹</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-device">—</div>
+      </div>
     </section>
 
     <!-- 输入解析器 -->
@@ -110,6 +150,6 @@
     </footer>
   </main>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
