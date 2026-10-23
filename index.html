@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloud 用户识别检测</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🛡️</span>
+      <span>Cloud 用户识别检测</span>
+    </div>
+    <div class="subtitle">检测你的环境是否可能被识别为中国用户</div>
+  </header>
+
+  <main class="container">
+    <!-- 总分卡片 -->
+    <section class="score-card" id="scoreCard">
+      <div class="score-circle" id="scoreCircle">
+        <span class="score-num" id="scoreNum">--</span>
+        <span class="score-label">风险评分</span>
+      </div>
+      <div class="score-info">
+        <h2 id="scoreTitle">点击下方按钮开始检测</h2>
+        <p id="scoreDesc">本工具会检测：系统时区、系统/浏览器语言、IP 归属地、DNS 解析器、WebRTC 真实 IP 泄露、代理/中转站特征。</p>
+        <button id="btnStart" class="btn btn-primary btn-large">🚀 开始检测</button>
+      </div>
+    </section>
+
+    <!-- 检测项列表 -->
+    <section class="checks" id="checks">
+      <!-- 时区 -->
+      <div class="check-item" id="check-timezone">
+        <div class="check-head">
+          <span class="check-icon">🕐</span>
+          <span class="check-name">系统时区</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-timezone">—</div>
+      </div>
+
+      <!-- 语言 -->
+      <div class="check-item" id="check-language">
+        <div class="check-head">
+          <span class="check-icon">🗣️</span>
+          <span class="check-name">系统 / 浏览器语言</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-language">—</div>
+      </div>
+
+      <!-- IP -->
+      <div class="check-item" id="check-ip">
+        <div class="check-head">
+          <span class="check-icon">🌐</span>
+          <span class="check-name">IP 归属地</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-ip">—</div>
+      </div>
+
+      <!-- DNS -->
+      <div class="check-item" id="check-dns">
+        <div class="check-head">
+          <span class="check-icon">🔗</span>
+          <span class="check-name">DNS 解析器</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-dns">—</div>
+      </div>
+
+      <!-- WebRTC -->
+      <div class="check-item" id="check-webrtc">
+        <div class="check-head">
+          <span class="check-icon">📡</span>
+          <span class="check-name">WebRTC 真实 IP 泄露</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-webrtc">—</div>
+      </div>
+
+      <!-- 代理/中转站 -->
+      <div class="check-item" id="check-proxy">
+        <div class="check-head">
+          <span class="check-icon">🔀</span>
+          <span class="check-name">代理 / 中转站特征</span>
+          <span class="check-badge badge-unknown">未检测</span>
+        </div>
+        <div class="check-detail" id="detail-proxy">—</div>
+      </div>
+    </section>
+
+    <!-- 输入解析器 -->
+    <section class="parser-section">
+      <h3>📋 批量输入解析器</h3>
+      <p class="parser-hint">粘贴代理/DNS/IP 列表（支持英文逗号、中文逗号「，」、分号「;；」、换行，逗号后有无空格均可自动识别）</p>
+      <textarea id="inputArea" placeholder="例如：&#10;127.0.0.1:7890，8.8.8.8，114.114.114.114; 1.1.1.1&#10;https://api.example.com/v1, https://relay.cn&#10;::1"></textarea>
+      <div class="parser-actions">
+        <button id="btnParse" class="btn btn-primary">解析</button>
+        <button id="btnClear" class="btn btn-ghost">清空</button>
+        <span class="parser-count" id="parserCount"></span>
+      </div>
+      <div class="parser-result" id="parserResult"></div>
+    </section>
+
+    <footer class="footer">
+      <p>⚠️ 本工具仅供学习研究，检测结果不代表实际封禁状态。服务端检测手段更复杂，请勿用于非法用途。</p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
