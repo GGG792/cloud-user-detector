@@ -453,3 +453,8 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+// 检测项错峰淡入
+document.querySelectorAll(".check-item").forEach((el, i) => {
+  el.style.animationDelay = i * 0.08 + "s";
+});
